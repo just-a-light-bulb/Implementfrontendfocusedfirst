@@ -18,11 +18,11 @@ const MOCK_TRANSLATIONS: Array<{ original: string; translated: string; speakerGe
   { original: "あなたが大切だから", translated: "เพราะหนูห่วงใยคุณค่ะ", speakerGender: "female" },
 ];
 
-// Typical manga speech bubble positions (x%, y%, w%, h%)
-const BUBBLE_POSITIONS = [
-  { x: 6, y: 4, width: 34, height: 12 },
-  { x: 57, y: 4, width: 33, height: 12 },
-  { x: 5, y: 46, width: 36, height: 13 },
+// Default positions when no existing blocks are present
+const DEFAULT_BUBBLE_POSITIONS = [
+  { x: 6,  y: 4,  width: 34, height: 12 },
+  { x: 57, y: 4,  width: 33, height: 12 },
+  { x: 5,  y: 46, width: 36, height: 13 },
   { x: 56, y: 46, width: 35, height: 13 },
   { x: 10, y: 78, width: 30, height: 11 },
   { x: 58, y: 78, width: 30, height: 11 },
@@ -33,24 +33,37 @@ function generateId() {
 }
 
 // ──────────────────────────────────────────────
-// Mock translation (no API key needed)
+// Mock translation — preserves existing block positions
 // ──────────────────────────────────────────────
-async function mockTranslatePage(count = 4): Promise<TextBlock[]> {
+async function mockTranslatePage(count = 4, existingBlocks: TextBlock[] = []): Promise<TextBlock[]> {
   await new Promise((r) => setTimeout(r, 2200 + Math.random() * 800));
 
+  // If existing blocks are present, match their count and reuse positions
+  const targetCount = existingBlocks.length > 0 ? existingBlocks.length : count;
   const shuffled = [...MOCK_TRANSLATIONS].sort(() => Math.random() - 0.5);
-  const selected = shuffled.slice(0, Math.min(count, BUBBLE_POSITIONS.length));
+  const selected = shuffled.slice(0, Math.min(targetCount, MOCK_TRANSLATIONS.length));
 
-  return selected.map((item, i) => ({
-    id: generateId(),
-    original: item.original,
-    translated: item.translated,
-    speakerGender: item.speakerGender,
-    ...BUBBLE_POSITIONS[i],
-    fontSize: 13,
-    color: "#000000",
-    bgColor: "#ffffff",
-  }));
+  return selected.map((item, i) => {
+    const existing = existingBlocks[i];
+    const defaultPos = DEFAULT_BUBBLE_POSITIONS[i % DEFAULT_BUBBLE_POSITIONS.length];
+
+    return {
+      // Keep the existing block's ID so canvas selection stays stable
+      id: existing?.id ?? generateId(),
+      original: item.original,
+      translated: item.translated,
+      speakerGender: item.speakerGender,
+      // Preserve the user's existing position/size or fall back to defaults
+      x:      existing?.x      ?? defaultPos.x,
+      y:      existing?.y      ?? defaultPos.y,
+      width:  existing?.width  ?? defaultPos.width,
+      height: existing?.height ?? defaultPos.height,
+      // Preserve visual style choices
+      fontSize: existing?.fontSize ?? 13,
+      color:    existing?.color    ?? "#000000",
+      bgColor:  existing?.bgColor  ?? "#ffffff",
+    };
+  });
 }
 
 // ──────────────────────────────────────────────
@@ -76,7 +89,7 @@ Analyze this image:
 }
 Return ONLY the JSON, no other text.`;
 
-async function realTranslatePage(imageUrl: string, apiKey: string): Promise<TextBlock[]> {
+async function realTranslatePage(imageUrl: string, apiKey: string, existingBlocks: TextBlock[] = []): Promise<TextBlock[]> {
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -108,7 +121,6 @@ async function realTranslatePage(imageUrl: string, apiKey: string): Promise<Text
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content ?? "";
 
-  // Extract JSON from response
   const jsonMatch = content.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Could not parse AI response as JSON");
 
@@ -121,33 +133,39 @@ async function realTranslatePage(imageUrl: string, apiKey: string): Promise<Text
     width?: number;
     height?: number;
     speakerGender?: string;
-  }) => ({
-    id: generateId(),
-    original: b.original ?? "",
-    translated: b.translated ?? "",
-    x: typeof b.x === "number" ? b.x : 10,
-    y: typeof b.y === "number" ? b.y : 10,
-    width: typeof b.width === "number" ? b.width : 30,
-    height: typeof b.height === "number" ? b.height : 12,
-    speakerGender: (b.speakerGender as SpeakerGender) ?? "unknown",
-    fontSize: 13,
-    color: "#000000",
-    bgColor: "#ffffff",
-  }));
+  }, i: number) => {
+    // For real API: if existing blocks present, overlay the AI-detected x/y onto them
+    const existing = existingBlocks[i];
+    return {
+      id: existing?.id ?? generateId(),
+      original: b.original ?? "",
+      translated: b.translated ?? "",
+      // Prefer AI-detected positions for real translation, but keep style prefs
+      x:      typeof b.x === "number" ? b.x : (existing?.x ?? 10),
+      y:      typeof b.y === "number" ? b.y : (existing?.y ?? 10),
+      width:  typeof b.width  === "number" ? b.width  : (existing?.width  ?? 30),
+      height: typeof b.height === "number" ? b.height : (existing?.height ?? 12),
+      speakerGender: (b.speakerGender as SpeakerGender) ?? "unknown",
+      fontSize: existing?.fontSize ?? 13,
+      color:    existing?.color    ?? "#000000",
+      bgColor:  existing?.bgColor  ?? "#ffffff",
+    };
+  });
 
   return blocks;
 }
 
 // ──────────────────────────────────────────────
-// Public API
+// Public API — existingBlocks is forwarded to preserve positions
 // ──────────────────────────────────────────────
 export async function translatePage(
   imageUrl: string,
   apiKey?: string,
-  bubbleCount = 4
+  bubbleCount = 4,
+  existingBlocks: TextBlock[] = []
 ): Promise<TextBlock[]> {
   if (apiKey && apiKey.trim().length > 10) {
-    return realTranslatePage(imageUrl, apiKey.trim());
+    return realTranslatePage(imageUrl, apiKey.trim(), existingBlocks);
   }
-  return mockTranslatePage(bubbleCount);
+  return mockTranslatePage(bubbleCount, existingBlocks);
 }

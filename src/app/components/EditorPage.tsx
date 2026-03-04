@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import {
   ArrowLeft, Upload, Wand2, Download, Plus, BookOpen,
   ChevronLeft, ChevronRight, Settings, FileImage, Loader2,
-  CheckCircle, AlertCircle, X, LayoutGrid
+  CheckCircle, AlertCircle, X, LayoutGrid, RefreshCw
 } from "lucide-react";
 import { useAppStore } from "../store";
 import { translatePage } from "../lib/openrouter";
@@ -30,11 +30,11 @@ export function EditorPage() {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-[#0a0a14] flex items-center justify-center text-white">
+      <div className="min-h-screen flex items-center justify-center text-white" style={{ background: "#060610" }}>
         <div className="text-center">
-          <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400">Project not found.</p>
-          <button onClick={() => navigate("/dashboard")} className="mt-3 text-violet-400 hover:text-violet-300">
+          <BookOpen className="w-12 h-12 mx-auto mb-3" style={{ color: "#1e1b4b" }} />
+          <p style={{ color: "#475569" }}>Project not found.</p>
+          <button onClick={() => navigate("/dashboard")} style={{ color: "#8b5cf6", marginTop: "12px", fontSize: "0.875rem" }}>
             ← Back to dashboard
           </button>
         </div>
@@ -70,7 +70,15 @@ export function EditorPage() {
     setTranslatingPageId(page.id);
     setTranslateError(null);
     try {
-      const blocks = await translatePage(page.imageDataUrl, settings.openRouterApiKey, 4);
+      // Pass existing blocks so their positions are preserved during re-translation
+      const existingBlocks = page.textBlocks;
+      const count = existingBlocks.length > 0 ? existingBlocks.length : 4;
+      const blocks = await translatePage(
+        page.imageDataUrl,
+        settings.openRouterApiKey,
+        count,
+        existingBlocks
+      );
       useAppStore.getState().replaceTextBlocks(project.id, page.id, blocks);
       updatePage(project.id, page.id, { aiTranslated: true });
     } catch (err) {
@@ -90,31 +98,33 @@ export function EditorPage() {
   const untranslatedCount = project.pages.filter((p) => !p.aiTranslated).length;
 
   return (
-    <div className="h-screen bg-[#0a0a14] text-white flex flex-col overflow-hidden">
+    <div className="h-screen text-white flex flex-col overflow-hidden" style={{ background: "#060610" }}>
       <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileUpload} />
 
       {/* Top Navbar */}
-      <header className="bg-[#0f0f1c] border-b border-white/10 h-14 flex items-center px-4 gap-3 shrink-0 z-30">
+      <header className="flex items-center px-4 gap-3 shrink-0 z-30" style={{ background: "#0a0a1a", borderBottom: "1px solid rgba(255,255,255,0.07)", height: "52px" }}>
         <button
           onClick={() => navigate("/dashboard")}
-          className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors"
-          style={{ fontSize: "0.8125rem" }}
+          className="flex items-center gap-1.5 transition-colors"
+          style={{ color: "#64748b", fontSize: "0.8125rem" }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#e2e8f0"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#64748b"; }}
         >
           <ArrowLeft className="w-4 h-4" />
-          Back
+          Dashboard
         </button>
 
-        <div className="w-px h-5 bg-white/10" />
+        <div className="w-px h-4" style={{ background: "rgba(255,255,255,0.1)" }} />
 
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-6 h-6 rounded bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shrink-0">
-            <BookOpen className="w-3.5 h-3.5 text-white" />
+          <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}>
+            <BookOpen className="w-3 h-3 text-white" />
           </div>
-          <h1 className="text-white truncate" style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
+          <h1 className="text-white truncate" style={{ fontSize: "0.9375rem", fontWeight: 600, letterSpacing: "-0.01em" }}>
             {project.name}
           </h1>
           {currentPage && (
-            <span className="text-slate-500 truncate hidden sm:block" style={{ fontSize: "0.8125rem" }}>
+            <span className="truncate hidden sm:block" style={{ fontSize: "0.8125rem", color: "#334155" }}>
               / {currentPage.name}
             </span>
           )}
@@ -127,34 +137,44 @@ export function EditorPage() {
           <button
             onClick={handleTranslateAll}
             disabled={!!translatingPageId}
-            className="flex items-center gap-2 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-violet-300 rounded-lg transition-colors disabled:opacity-50"
-            style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+            className="flex items-center gap-2 transition-all"
+            style={{
+              background: "rgba(124,58,237,0.15)",
+              border: "1px solid rgba(124,58,237,0.3)",
+              borderRadius: "8px",
+              padding: "6px 12px",
+              color: "#a78bfa",
+              fontSize: "0.8125rem",
+              fontWeight: 500,
+              opacity: translatingPageId ? 0.5 : 1,
+              cursor: translatingPageId ? "not-allowed" : "pointer",
+            }}
+            onMouseEnter={(e) => { if (!translatingPageId) e.currentTarget.style.background = "rgba(124,58,237,0.22)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(124,58,237,0.15)"; }}
           >
-            {translatingPageId ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Wand2 className="w-3.5 h-3.5" />
-            )}
+            {translatingPageId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
             Translate All ({untranslatedCount})
           </button>
         )}
 
-        {/* Upload */}
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-lg transition-colors"
-          style={{ fontSize: "0.8125rem" }}
+          className="flex items-center gap-2 transition-all"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: "8px", padding: "6px 12px", color: "#94a3b8", fontSize: "0.8125rem" }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
         >
           <Upload className="w-3.5 h-3.5" />
-          Upload Pages
+          Upload
         </button>
 
-        {/* Export */}
         <button
           onClick={() => setShowExport(true)}
           disabled={project.pages.length === 0}
-          className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 rounded-lg transition-colors disabled:opacity-40"
-          style={{ fontSize: "0.8125rem" }}
+          className="flex items-center gap-2 transition-all"
+          style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: "8px", padding: "6px 12px", color: "#34d399", fontSize: "0.8125rem", fontWeight: 500, opacity: project.pages.length === 0 ? 0.4 : 1 }}
+          onMouseEnter={(e) => { if (project.pages.length > 0) e.currentTarget.style.background = "rgba(16,185,129,0.18)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(16,185,129,0.12)"; }}
         >
           <Download className="w-3.5 h-3.5" />
           Export
@@ -162,7 +182,10 @@ export function EditorPage() {
 
         <button
           onClick={() => setShowSettings(true)}
-          className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
+          className="p-2 rounded-lg transition-colors"
+          style={{ color: "#475569" }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#94a3b8"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#475569"; e.currentTarget.style.background = "transparent"; }}
         >
           <Settings className="w-4 h-4" />
         </button>
@@ -170,113 +193,136 @@ export function EditorPage() {
 
       {/* Error banner */}
       {translateError && (
-        <div className="bg-red-500/10 border-b border-red-500/20 px-4 py-2 flex items-center gap-2 text-red-400 shrink-0">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span style={{ fontSize: "0.8125rem" }}>{translateError}</span>
-          <button onClick={() => setTranslateError(null)} className="ml-auto hover:text-red-300">
+        <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: "rgba(239,68,68,0.08)", borderBottom: "1px solid rgba(239,68,68,0.15)" }}>
+          <AlertCircle className="w-4 h-4 shrink-0" style={{ color: "#f87171" }} />
+          <span style={{ fontSize: "0.8125rem", color: "#fca5a5" }}>{translateError}</span>
+          <button onClick={() => setTranslateError(null)} className="ml-auto" style={{ color: "#f87171" }}>
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Left: Page Thumbnails Sidebar */}
-        {showSidebar && (
-          <aside className="w-48 bg-[#0d0d1a] border-r border-white/10 flex flex-col shrink-0 overflow-hidden">
-            <div className="px-3 py-2.5 border-b border-white/10 flex items-center justify-between">
-              <span className="text-slate-400" style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                Pages ({project.pages.length})
-              </span>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="p-1 rounded hover:bg-white/10 text-slate-500 hover:text-white transition-colors"
-                title="Add pages"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-            </div>
+        <aside
+          className="flex flex-col shrink-0 overflow-hidden transition-all"
+          style={{
+            width: showSidebar ? "176px" : "0px",
+            background: "#09091a",
+            borderRight: "1px solid rgba(255,255,255,0.06)",
+            overflow: "hidden",
+          }}
+        >
+          <div className="flex items-center justify-between px-3 py-2.5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Pages ({project.pages.length})
+            </span>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1 rounded-lg transition-colors"
+              style={{ color: "#334155" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "#a78bfa"; e.currentTarget.style.background = "rgba(124,58,237,0.12)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "#334155"; e.currentTarget.style.background = "transparent"; }}
+              title="Add pages"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
-            <div className="flex-1 overflow-y-auto py-2 px-2 space-y-2">
-              {project.pages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <FileImage className="w-8 h-8 text-slate-700 mb-2" />
-                  <p className="text-slate-600" style={{ fontSize: "0.75rem" }}>No pages yet</p>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="mt-2 text-violet-400 hover:text-violet-300 transition-colors"
-                    style={{ fontSize: "0.6875rem" }}
-                  >
-                    Upload images
-                  </button>
-                </div>
-              ) : (
-                project.pages.map((page, idx) => (
-                  <div
-                    key={page.id}
-                    onClick={() => { setCurrentPageIndex(idx); setSelectedBlockId(null); }}
-                    className={`rounded-lg overflow-hidden cursor-pointer border transition-all group relative ${
-                      idx === currentPageIndex
-                        ? "border-violet-500 shadow-md shadow-violet-500/20"
-                        : "border-white/10 hover:border-white/20"
-                    }`}
-                  >
-                    <div className="relative h-28 bg-[#1a1a2e]">
-                      <img
-                        src={page.imageDataUrl}
-                        alt={page.name}
-                        className="w-full h-full object-cover"
-                      />
-                      {/* Translation status */}
-                      <div className="absolute top-1 right-1">
-                        {translatingPageId === page.id ? (
-                          <div className="w-5 h-5 rounded-full bg-violet-600/80 flex items-center justify-center">
-                            <Loader2 className="w-3 h-3 text-white animate-spin" />
-                          </div>
-                        ) : page.aiTranslated ? (
-                          <div className="w-5 h-5 rounded-full bg-emerald-600/80 flex items-center justify-center">
-                            <CheckCircle className="w-3 h-3 text-white" />
-                          </div>
-                        ) : null}
-                      </div>
-                      {/* Translate button on hover */}
-                      {!page.aiTranslated && translatingPageId !== page.id && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleTranslatePage(page); }}
-                          className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <div className="flex items-center gap-1 bg-violet-600 px-2 py-1 rounded" style={{ fontSize: "0.625rem" }}>
-                            <Wand2 className="w-3 h-3" />
-                            AI Translate
-                          </div>
-                        </button>
-                      )}
+          <div className="flex-1 overflow-y-auto py-2 px-2 space-y-2">
+            {project.pages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center px-2">
+                <FileImage className="w-7 h-7 mb-2" style={{ color: "#1e1b4b" }} />
+                <p style={{ fontSize: "0.6875rem", color: "#334155" }}>No pages yet</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ marginTop: "6px", fontSize: "0.6875rem", color: "#7c3aed" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "#a78bfa"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "#7c3aed"; }}
+                >
+                  Upload images
+                </button>
+              </div>
+            ) : (
+              project.pages.map((page, idx) => (
+                <div
+                  key={page.id}
+                  onClick={() => { setCurrentPageIndex(idx); setSelectedBlockId(null); }}
+                  className="rounded-lg overflow-hidden cursor-pointer group transition-all relative"
+                  style={{
+                    border: idx === currentPageIndex
+                      ? "1.5px solid rgba(124,58,237,0.6)"
+                      : "1.5px solid rgba(255,255,255,0.06)",
+                    boxShadow: idx === currentPageIndex ? "0 0 16px rgba(124,58,237,0.15)" : "none",
+                  }}
+                  onMouseEnter={(e) => { if (idx !== currentPageIndex) e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+                  onMouseLeave={(e) => { if (idx !== currentPageIndex) e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}
+                >
+                  <div className="relative h-24" style={{ background: "#0d0d24" }}>
+                    <img src={page.imageDataUrl} alt={page.name} className="w-full h-full object-cover" />
+                    {/* Status badge */}
+                    <div className="absolute top-1.5 right-1.5">
+                      {translatingPageId === page.id ? (
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "rgba(124,58,237,0.9)" }}>
+                          <Loader2 className="w-3 h-3 text-white animate-spin" />
+                        </div>
+                      ) : page.aiTranslated ? (
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "rgba(16,185,129,0.9)" }}>
+                          <CheckCircle className="w-3 h-3 text-white" />
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="px-2 py-1.5 bg-[#0d0d1a]">
-                      <p className="text-slate-400 truncate" style={{ fontSize: "0.6875rem" }}>
-                        {idx + 1}. {page.name}
-                      </p>
-                      <p className="text-slate-600" style={{ fontSize: "0.5625rem" }}>
-                        {page.textBlocks.length} blocks
-                      </p>
-                    </div>
+                    {/* Hover translate */}
+                    {translatingPageId !== page.id && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleTranslatePage(page); }}
+                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ background: "rgba(0,0,0,0.65)" }}
+                      >
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: page.aiTranslated ? "rgba(16,185,129,0.8)" : "rgba(124,58,237,0.9)", fontSize: "0.5625rem", fontWeight: 600 }}>
+                          {page.aiTranslated ? <RefreshCw className="w-2.5 h-2.5" /> : <Wand2 className="w-2.5 h-2.5" />}
+                          {page.aiTranslated ? "Re-translate" : "AI Translate"}
+                        </div>
+                      </button>
+                    )}
                   </div>
-                ))
-              )}
-            </div>
-          </aside>
-        )}
+                  <div className="px-2 py-1.5" style={{ background: idx === currentPageIndex ? "rgba(124,58,237,0.08)" : "#09091a" }}>
+                    <p className="truncate" style={{ fontSize: "0.6875rem", color: idx === currentPageIndex ? "#c4b5fd" : "#475569" }}>
+                      {idx + 1}. {page.name}
+                    </p>
+                    <p style={{ fontSize: "0.5625rem", color: "#1e293b" }}>
+                      {page.textBlocks.length} blocks
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
+
+        {/* Sidebar toggle tab */}
+        <button
+          onClick={() => setShowSidebar(!showSidebar)}
+          className="absolute z-20 flex items-center justify-center rounded-r-lg transition-all"
+          style={{
+            left: showSidebar ? "176px" : "0px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: "16px",
+            height: "44px",
+            background: "#101024",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderLeft: "none",
+            color: "#334155",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#8b5cf6"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#334155"; }}
+        >
+          {showSidebar ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        </button>
 
         {/* Center: Canvas Editor */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Toggle sidebar */}
-          <button
-            onClick={() => setShowSidebar(!showSidebar)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-5 h-12 bg-[#1a1a2e] border-r border-t border-b border-white/10 flex items-center justify-center text-slate-600 hover:text-white transition-colors rounded-r-lg"
-            style={{ marginLeft: showSidebar ? "192px" : "0", transition: "margin 0.2s" }}
-          >
-            {showSidebar ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          </button>
-
           {currentPage ? (
             <CanvasEditor
               projectId={project.id}
@@ -287,20 +333,18 @@ export function EditorPage() {
               onSelectBlock={setSelectedBlockId}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 bg-[#050508]">
-              <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                <Upload className="w-9 h-9 text-slate-600" />
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-5" style={{ background: "#04040e" }}>
+              <div className="w-20 h-20 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <Upload className="w-9 h-9" style={{ color: "#1e293b" }} />
               </div>
               <div>
-                <p className="text-slate-400" style={{ fontSize: "1rem", fontWeight: 600 }}>No pages uploaded</p>
-                <p className="text-slate-600 mt-1" style={{ fontSize: "0.875rem" }}>
-                  Upload your manga pages to start translating
-                </p>
+                <p className="text-white" style={{ fontSize: "1rem", fontWeight: 600 }}>No pages uploaded</p>
+                <p style={{ fontSize: "0.875rem", color: "#334155", marginTop: "4px" }}>Upload manga pages to start translating</p>
               </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-lg transition-all"
-                style={{ fontSize: "0.875rem", fontWeight: 600 }}
+                className="flex items-center gap-2 transition-all"
+                style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)", borderRadius: "10px", padding: "10px 20px", color: "white", fontSize: "0.875rem", fontWeight: 600 }}
               >
                 <Upload className="w-4 h-4" />
                 Upload Pages
@@ -310,24 +354,30 @@ export function EditorPage() {
 
           {/* Page navigation */}
           {project.pages.length > 0 && (
-            <div className="bg-[#0f0f1c] border-t border-white/10 px-4 py-2 flex items-center justify-between shrink-0">
+            <div className="flex items-center justify-between px-4 py-2 shrink-0" style={{ background: "#09091a", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
               <button
                 onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))}
                 disabled={currentPageIndex === 0}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors disabled:opacity-30"
+                className="p-1.5 rounded-lg transition-colors"
+                style={{ color: "#475569", opacity: currentPageIndex === 0 ? 0.3 : 1 }}
+                onMouseEnter={(e) => { if (currentPageIndex > 0) e.currentTarget.style.color = "#94a3b8"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "#475569"; }}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-slate-400" style={{ fontSize: "0.8125rem" }}>
+              <span style={{ fontSize: "0.8125rem", color: "#475569" }}>
                 Page {currentPageIndex + 1} of {project.pages.length}
                 {currentPage && (
-                  <span className="text-slate-600 ml-2">· {currentPage.textBlocks.length} blocks</span>
+                  <span style={{ color: "#1e293b", marginLeft: "8px" }}>· {currentPage.textBlocks.length} blocks</span>
                 )}
               </span>
               <button
                 onClick={() => setCurrentPageIndex(Math.min(project.pages.length - 1, currentPageIndex + 1))}
                 disabled={currentPageIndex === project.pages.length - 1}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors disabled:opacity-30"
+                className="p-1.5 rounded-lg transition-colors"
+                style={{ color: "#475569", opacity: currentPageIndex === project.pages.length - 1 ? 0.3 : 1 }}
+                onMouseEnter={(e) => { if (currentPageIndex < project.pages.length - 1) e.currentTarget.style.color = "#94a3b8"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "#475569"; }}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -336,49 +386,66 @@ export function EditorPage() {
         </main>
 
         {/* Right: Translation Grid */}
-        <aside className="w-96 bg-[#0d0d1a] border-l border-white/10 flex flex-col shrink-0">
-          <div className="px-3 py-2.5 border-b border-white/10 flex items-center justify-between shrink-0">
+        <aside className="flex flex-col shrink-0 overflow-hidden" style={{ width: "380px", background: "#09091a", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
+          {/* Grid header */}
+          <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="flex items-center gap-2">
-              <LayoutGrid className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-slate-300" style={{ fontSize: "0.8125rem", fontWeight: 600 }}>
-                Translation Grid
-              </span>
+              <LayoutGrid className="w-3.5 h-3.5" style={{ color: "#7c3aed" }} />
+              <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "#cbd5e1" }}>Translation Grid</span>
             </div>
-            {currentPage && !currentPage.aiTranslated && (
-              <button
-                onClick={() => handleTranslatePage(currentPage)}
-                disabled={!!translatingPageId}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-violet-300 rounded-lg transition-colors disabled:opacity-50"
-                style={{ fontSize: "0.75rem" }}
-              >
-                {translatingPageId === currentPage.id ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Wand2 className="w-3 h-3" />
-                )}
-                {translatingPageId === currentPage.id ? "Translating..." : "Translate Page"}
-              </button>
-            )}
-            {currentPage?.aiTranslated && (
-              <span className="flex items-center gap-1 text-emerald-400" style={{ fontSize: "0.6875rem" }}>
-                <CheckCircle className="w-3 h-3" />
-                AI Translated
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {currentPage?.aiTranslated && (
+                <span className="flex items-center gap-1" style={{ fontSize: "0.6875rem", color: "#10b981" }}>
+                  <CheckCircle className="w-3 h-3" />
+                  Translated
+                </span>
+              )}
+              {currentPage && (
+                <button
+                  onClick={() => handleTranslatePage(currentPage)}
+                  disabled={!!translatingPageId}
+                  className="flex items-center gap-1.5 transition-all"
+                  style={{
+                    background: currentPage.aiTranslated ? "rgba(16,185,129,0.1)" : "rgba(124,58,237,0.15)",
+                    border: currentPage.aiTranslated ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(124,58,237,0.3)",
+                    borderRadius: "8px",
+                    padding: "5px 10px",
+                    color: currentPage.aiTranslated ? "#34d399" : "#a78bfa",
+                    fontSize: "0.75rem",
+                    fontWeight: 500,
+                    opacity: translatingPageId ? 0.5 : 1,
+                    cursor: translatingPageId ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {translatingPageId === currentPage.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : currentPage.aiTranslated ? (
+                    <RefreshCw className="w-3 h-3" />
+                  ) : (
+                    <Wand2 className="w-3 h-3" />
+                  )}
+                  {translatingPageId === currentPage.id
+                    ? "Translating..."
+                    : currentPage.aiTranslated
+                    ? "Re-translate"
+                    : "AI Translate"}
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* AI Translation loading state */}
+          {/* AI Translation loading */}
           {translatingPageId === currentPage?.id && (
-            <div className="p-4 flex flex-col items-center gap-3 bg-violet-600/5 border-b border-violet-500/20">
-              <div className="flex items-center gap-2 text-violet-300" style={{ fontSize: "0.8125rem" }}>
+            <div className="p-4 flex flex-col gap-3 shrink-0" style={{ background: "rgba(124,58,237,0.06)", borderBottom: "1px solid rgba(124,58,237,0.12)" }}>
+              <div className="flex items-center gap-2" style={{ fontSize: "0.8125rem", color: "#a78bfa" }}>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 AI is analyzing the page...
               </div>
-              <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-violet-600 to-indigo-600 rounded-full animate-pulse" style={{ width: "60%" }} />
+              <div className="w-full rounded-full overflow-hidden" style={{ height: "3px", background: "rgba(255,255,255,0.08)" }}>
+                <div className="h-full rounded-full animate-pulse" style={{ width: "60%", background: "linear-gradient(90deg, #7c3aed, #6366f1)" }} />
               </div>
-              <p className="text-slate-500 text-center" style={{ fontSize: "0.6875rem" }}>
-                Detecting speech bubbles · Analyzing gender & context · Generating Thai with correct honorifics
+              <p className="text-center" style={{ fontSize: "0.6875rem", color: "#334155" }}>
+                Detecting bubbles · Matching gender honorifics · Generating Thai
               </p>
             </div>
           )}
@@ -392,7 +459,7 @@ export function EditorPage() {
               onSelectBlock={setSelectedBlockId}
             />
           ) : (
-            <div className="flex-1 flex items-center justify-center text-slate-600" style={{ fontSize: "0.8125rem" }}>
+            <div className="flex-1 flex items-center justify-center" style={{ fontSize: "0.8125rem", color: "#334155" }}>
               No page selected
             </div>
           )}

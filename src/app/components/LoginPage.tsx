@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
-import { BookOpen, Wand2, Eye, EyeOff } from "lucide-react";
+import { BookOpen, Wand2, Eye, EyeOff, Sparkles } from "lucide-react";
 import { useAppStore, loadDemoProject } from "../store";
 
 export function LoginPage() {
@@ -8,7 +8,7 @@ export function LoginPage() {
   const login = useAppStore((s) => s.login);
 
   const [email, setEmail] = useState("translator@example.com");
-  const [password, setPassword] = useState("••••••••");
+  const [password, setPassword] = useState("password");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,59 +37,100 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a14] flex items-center justify-center p-4">
-      {/* Background gradient blobs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-violet-600/10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-indigo-600/10 blur-3xl" />
-      </div>
+    <div className="min-h-screen flex" style={{ background: "#060610" }}>
+      {/* Left panel — branding */}
+      <div
+        className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 p-10 relative overflow-hidden"
+        style={{ background: "linear-gradient(145deg, #0e0828 0%, #060610 60%)" }}
+      >
+        {/* Glow orbs */}
+        <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full opacity-30" style={{ background: "radial-gradient(circle, #7c3aed 0%, transparent 70%)" }} />
+        <div className="absolute bottom-10 right-0 w-56 h-56 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #4f46e5 0%, transparent 70%)" }} />
 
-      <div className="w-full max-w-md relative">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 mb-4 shadow-lg shadow-violet-500/30">
-            <BookOpen className="w-8 h-8 text-white" />
+        <div className="relative">
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}>
+              <BookOpen className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-white" style={{ fontSize: "1.0625rem", fontWeight: 700, letterSpacing: "-0.01em" }}>
+              Comic Trans Studio
+            </span>
           </div>
-          <h1 className="text-white" style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1.2 }}>
-            Comic Trans Studio
-          </h1>
-          <p className="text-slate-400 mt-1" style={{ fontSize: "0.875rem" }}>
-            AI-powered manga translation platform
+
+          <h2 className="text-white mb-4" style={{ fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.2, letterSpacing: "-0.02em" }}>
+            AI-powered manga<br />translation at scale
+          </h2>
+          <p style={{ fontSize: "0.9375rem", color: "#94a3b8", lineHeight: 1.6 }}>
+            Upload manga pages, position text bubbles, translate with AI, and export with Thai honorifics perfectly matched to each speaker.
           </p>
+
+          <div className="mt-8 space-y-3">
+            {[
+              { icon: "🎌", text: "Detects speech bubbles automatically" },
+              { icon: "🤖", text: "Qwen2-VL AI with gender-aware honorifics" },
+              { icon: "📦", text: "Export as ZIP, JSON or CSV" },
+            ].map((f) => (
+              <div key={f.text} className="flex items-center gap-3">
+                <span style={{ fontSize: "1.25rem" }}>{f.icon}</span>
+                <span style={{ fontSize: "0.875rem", color: "#94a3b8" }}>{f.text}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Card */}
-        <div className="bg-[#12121e] border border-white/10 rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-white mb-1" style={{ fontSize: "1.125rem", fontWeight: 600 }}>
-            Sign in to your account
-          </h2>
-          <p className="text-slate-500 mb-6" style={{ fontSize: "0.8125rem" }}>
-            Powered by Auth0 · Secured with JWT
+        <p style={{ fontSize: "0.75rem", color: "#334155" }}>© 2026 Comic Trans Studio · Frontend MVP</p>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm">
+          {/* Mobile logo */}
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}>
+              <BookOpen className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-white" style={{ fontSize: "1rem", fontWeight: 700 }}>Comic Trans Studio</span>
+          </div>
+
+          <h1 className="text-white mb-1" style={{ fontSize: "1.375rem", fontWeight: 700, letterSpacing: "-0.01em" }}>
+            Welcome back
+          </h1>
+          <p style={{ fontSize: "0.875rem", color: "#64748b", marginBottom: "1.75rem" }}>
+            Sign in to continue translating
           </p>
 
           {error && (
-            <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg px-4 py-3" style={{ fontSize: "0.875rem" }}>
+            <div className="mb-4 rounded-xl px-4 py-3" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171", fontSize: "0.875rem" }}>
               {error}
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-slate-300 mb-1.5" style={{ fontSize: "0.875rem" }}>
+              <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 500, color: "#cbd5e1", marginBottom: "0.5rem" }}>
                 Email address
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors"
-                style={{ fontSize: "0.9375rem" }}
+                className="w-full outline-none transition-all"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "10px",
+                  padding: "10px 14px",
+                  color: "#f1f5f9",
+                  fontSize: "0.9375rem",
+                }}
                 placeholder="you@example.com"
+                onFocus={(e) => { e.target.style.borderColor = "rgba(124,58,237,0.6)"; e.target.style.boxShadow = "0 0 0 3px rgba(124,58,237,0.12)"; }}
+                onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 mb-1.5" style={{ fontSize: "0.875rem" }}>
+              <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 500, color: "#cbd5e1", marginBottom: "0.5rem" }}>
                 Password
               </label>
               <div className="relative">
@@ -97,14 +138,26 @@ export function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors pr-10"
-                  style={{ fontSize: "0.9375rem" }}
+                  className="w-full outline-none transition-all pr-10"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "10px",
+                    padding: "10px 14px",
+                    color: "#f1f5f9",
+                    fontSize: "0.9375rem",
+                  }}
                   placeholder="••••••••"
+                  onFocus={(e) => { e.target.style.borderColor = "rgba(124,58,237,0.6)"; e.target.style.boxShadow = "0 0 0 3px rgba(124,58,237,0.12)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: "#475569" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#94a3b8")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#475569")}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -113,23 +166,33 @@ export function LoginPage() {
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded border-white/20 bg-white/5 text-violet-600" />
-                <span className="text-slate-400" style={{ fontSize: "0.8125rem" }}>Remember me</span>
+                <input type="checkbox" style={{ accentColor: "#7c3aed" }} />
+                <span style={{ fontSize: "0.8125rem", color: "#64748b" }}>Remember me</span>
               </label>
-              <a href="#" className="text-violet-400 hover:text-violet-300 transition-colors" style={{ fontSize: "0.8125rem" }}>
-                Forgot password?
-              </a>
+              <a href="#" style={{ fontSize: "0.8125rem", color: "#8b5cf6" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#a78bfa")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#8b5cf6")}
+              >Forgot password?</a>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-lg py-2.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-violet-500/25"
-              style={{ fontSize: "0.9375rem", fontWeight: 600 }}
+              className="w-full flex items-center justify-center gap-2 transition-all"
+              style={{
+                background: loading ? "rgba(124,58,237,0.5)" : "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
+                borderRadius: "10px",
+                padding: "11px",
+                color: "white",
+                fontSize: "0.9375rem",
+                fontWeight: 600,
+                boxShadow: loading ? "none" : "0 4px 24px rgba(124,58,237,0.3)",
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: "rgba(255,255,255,0.3)", borderTopColor: "white" }} />
                   Signing in...
                 </>
               ) : (
@@ -140,27 +203,39 @@ export function LoginPage() {
 
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
+              <div className="w-full" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }} />
             </div>
             <div className="relative text-center">
-              <span className="bg-[#12121e] px-3 text-slate-500" style={{ fontSize: "0.8125rem" }}>or</span>
+              <span style={{ background: "#060610", padding: "0 12px", fontSize: "0.8125rem", color: "#475569" }}>or</span>
             </div>
           </div>
 
           <button
             onClick={handleDemo}
             disabled={loading}
-            className="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-violet-500/40 text-white rounded-lg py-2.5 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-            style={{ fontSize: "0.9375rem", fontWeight: 500 }}
+            className="w-full flex items-center justify-center gap-2 transition-all"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "10px",
+              padding: "11px",
+              color: "#e2e8f0",
+              fontSize: "0.9375rem",
+              fontWeight: 500,
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.5 : 1,
+            }}
+            onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.borderColor = "rgba(124,58,237,0.35)"; }}}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
           >
-            <Wand2 className="w-4 h-4 text-violet-400" />
-            Try Demo — no signup needed
+            <Sparkles className="w-4 h-4" style={{ color: "#a78bfa" }} />
+            Try Demo — no sign-up needed
           </button>
-        </div>
 
-        <p className="text-center text-slate-600 mt-6" style={{ fontSize: "0.75rem" }}>
-          © 2026 Comic Trans Studio · Frontend-Only MVP
-        </p>
+          <p className="text-center mt-6" style={{ fontSize: "0.75rem", color: "#334155" }}>
+            This is a frontend-only demo · No data is sent to any server
+          </p>
+        </div>
       </div>
     </div>
   );
